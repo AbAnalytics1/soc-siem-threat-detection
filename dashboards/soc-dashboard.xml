@@ -1,0 +1,178 @@
+<form theme="dark" version="1.1">
+  <label>SOC Analyst Dashboard</label>
+  <description>Real-time threat monitoring — Financial Services SOC</description>
+  <fieldset submitButton="false" autoRun="true">
+    <input type="time" token="time_tok" searchWhenChanged="true">
+      <label>Time Range</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <html>
+        <div style="background:linear-gradient(120deg,#0a1622 0%,#12283c 55%,#1a3a55 100%);padding:18px 24px;border-radius:6px;border-left:6px solid #dc4e41;box-shadow:0 2px 6px rgba(0,0,0,0.4);">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;">
+            <div>
+              <span style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:1px;">SECURITY OPERATIONS CENTRE</span>
+              <div style="font-size:13px;color:#9bb3c9;margin-top:4px;">MITRE ATT&amp;CK-aligned threat detection &#8226; Endpoint + Network telemetry &#8226; Financial Services</div>
+            </div>
+            <div style="font-size:12px;color:#7fd1a6;border:1px solid #2f5d47;background:#122a20;padding:6px 12px;border-radius:14px;">&#9679; LIVE MONITORING</div>
+          </div>
+        </div>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Critical &amp; High Alerts</title>
+      <single>
+        <search>
+          <query>index=windows_security (EventCode=1102 OR EventCode=1116 OR EventCode=1117 OR EventCode=10 OR EventCode=4625 OR (EventCode=4688 ("-enc" OR "DisableRealtimeMonitoring" OR "certutil"))) | stats count</query>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[1,6]</option>
+        <option name="useColors">1</option>
+        <option name="drilldown">none</option>
+        <option name="underLabel">high-severity detections</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Total Endpoint Detections</title>
+      <single>
+        <search>
+          <query>index=windows_security (EventCode=1102 OR EventCode=1116 OR EventCode=1117 OR EventCode=4720 OR EventCode=4732 OR EventCode=4698 OR EventCode=7045 OR EventCode=4625 OR EventCode=4648 OR EventCode=4688) | stats count</query>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x1e93c6","0x1e93c6"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">1</option>
+        <option name="drilldown">none</option>
+        <option name="underLabel">events matched</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Failed Logons</title>
+      <single>
+        <search>
+          <query>index=windows_security EventCode=4625 | stats count</query>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[10,50]</option>
+        <option name="useColors">1</option>
+        <option name="drilldown">none</option>
+        <option name="underLabel">authentication failures</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Network IDS Alerts</title>
+      <single>
+        <search>
+          <query>index=suricata event_type=alert NOT "SURICATA STREAM" | stats count</query>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[10,100]</option>
+        <option name="useColors">1</option>
+        <option name="drilldown">none</option>
+        <option name="underLabel">Suricata detections</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Endpoint Detections Over Time</title>
+      <chart>
+        <search>
+          <query>index=windows_security (EventCode=1102 OR EventCode=1116 OR EventCode=4625 OR EventCode=4720 OR EventCode=4698 OR EventCode=7045 OR EventCode=4688) | timechart span=1h count as Detections</query>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
+        </search>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.fieldColors">{"Detections":0xdc4e41}</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.axisTitleY.text">Detections</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>MITRE ATT&amp;CK Techniques Detected</title>
+      <chart>
+        <search>
+          <query>index=windows_security EventCode=* | eval Technique=case(EventCode=4625,"T1110 Brute Force",EventCode=1102,"T1070.001 Log Cleared",EventCode=7045,"T1543.003 New Service",EventCode=4720 OR EventCode=4732,"T1136 Account Creation",EventCode=4648,"T1078 Explicit Cred Logon",EventCode=4698,"T1053.005 Scheduled Task",match(_raw,"-enc|EncodedCommand"),"T1027 Encoded PowerShell",match(_raw,"certutil"),"T1105 Certutil Download",match(_raw,"DisableRealtimeMonitoring|MpPreference"),"T1562.001 Disable Defender",match(_raw,"whoami|net user|systeminfo|net localgroup"),"T1082/T1087 Discovery",match(_raw,"powershell"),"T1059.001 PowerShell") | where isnotnull(Technique) | stats count by Technique | sort -count</query>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.fieldColors">{"count":0x1e93c6}</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.axisTitleX.text">Detections</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Network IDS — Top Signatures (Suricata)</title>
+      <chart>
+        <search>
+          <query>index=suricata event_type=alert NOT "SURICATA STREAM" | spath output=sig path=alert.signature | stats count by sig | sort -count | head 8</query>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.fieldColors">{"count":0x53a051}</option>
+        <option name="charting.legend.placement">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Top Suspicious Command Lines</title>
+      <table>
+        <search>
+          <query>index=windows_security EventCode=4688 ("powershell" OR "certutil" OR "whoami" OR "net user" OR "cmd.exe" OR "systeminfo") | stats count as Count by CommandLine | sort -Count | head 8</query>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="count">8</option>
+        <format type="color" field="Count">
+          <colorPalette type="minMidMax" maxColor="0xdc4e41" midColor="0xf8be34" minColor="0x53a051"></colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Live Detections Feed (Endpoint)</title>
+      <table>
+        <search>
+          <query>index=windows_security (EventCode=1102 OR EventCode=1116 OR EventCode=4625 OR EventCode=4720 OR EventCode=4698 OR EventCode=7045 OR (EventCode=4688 ("powershell" OR "certutil" OR "whoami" OR "DisableRealtimeMonitoring"))) | eval Alert=case(EventCode=1102,"Log Cleared",EventCode=1116,"Malware Detected",EventCode=4625,"Failed Logon",EventCode=4720,"Account Created",EventCode=4698,"Scheduled Task",EventCode=7045,"New Service",EventCode=4688,"Suspicious Process"), Severity=case(EventCode=1102 OR EventCode=1116,"Critical",EventCode=4720 OR match(_raw,"-enc|certutil|DisableRealtimeMonitoring"),"High",1=1,"Medium"), Time=strftime(_time,"%H:%M:%S") | table Time, Severity, Alert, Computer, CommandLine | sort -Time | head 15</query>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="count">15</option>
+        <option name="wrap">false</option>
+        <format type="color" field="Severity">
+          <colorPalette type="map">{"Critical":#dc4e41,"High":#f8be34,"Medium":#1e93c6}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+</form>
