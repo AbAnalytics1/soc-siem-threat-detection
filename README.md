@@ -1,109 +1,137 @@
-# SOC with SIEM-Based Threat Detection
+# Hybrid SOC with SIEM-Based Threat Detection
 
-A functional Security Operations Centre (SOC) built around a **Splunk Enterprise SIEM**, featuring **14 detection rules mapped to the MITRE ATT&CK framework**, a real-time analyst dashboard, and a fully instrumented Windows endpoint — implemented end-to-end on **Apple Silicon (ARM64)**, a platform the standard tooling does not officially support.
+A working **hybrid Security Operations Centre (SOC)** designed for a fictional mid-sized UK financial-services firm:
 
-> MSc Cybersecurity capstone project. Scenario: threat detection for a financial-services organisation, where credential theft, privilege escalation, and anti-forensic activity carry direct regulatory and financial consequences.
+- **On premises:** a **Splunk Enterprise SIEM** receives Windows endpoint telemetry (Security, Sysmon and Microsoft Defender) and **Suricata** network IDS alerts, with **16 detection rules mapped to MITRE ATT&CK** and an analyst dashboard.
+- **In the cloud:** an **Azure honeypot** is monitored by **Microsoft Sentinel**, capturing real internet attacks.
+- **Response:** five incident-response playbooks are aligned to **NIST SP 800-61 Revision 3**.
+- **Testing:** the detections were validated with **Atomic Red Team**.
+
+Everything was built on **Apple Silicon (ARM64)**, which the standard tooling does not officially support.
+
+> MSc Cybersecurity capstone project, University of Chester (WB7103/WB7104), 2026. The scenario is a financial-services firm, where credential theft, privilege escalation and anti-forensic activity carry direct regulatory and financial consequences.
+
+![Architecture of the hybrid SOC](evidence/architecture.png)
 
 ---
 
-## Overview
+## Key results
 
-This project implements the core detection-and-response lifecycle of a modern SOC:
+| Measure | Result |
+|---|---|
+| ATT&CK techniques tested with Atomic Red Team | 7, across 5 tactics |
+| Detected by SIEM analytics | 6 of 7 (86%) |
+| Effective coverage (detected, or prevented by Defender and recorded) | 7 of 7 |
+| Mean time to detect | Within one 60-second forwarding cycle |
+| False-positive reduction on the noisiest rule | 714 to 29 matches (about 96%) |
+| Honeypot: failed logons, 28 Sep – 6 Oct 2026 | **55,313** from **121** unique IP addresses |
+| Honeypot: time to first attack | About **10.5 hours** after exposure |
+| Honeypot: successful remote logons | None |
 
-1. **Collect** — heterogeneous security telemetry ingested from a monitored Windows endpoint into Splunk.
-2. **Detect** — 14 analytics mapped to MITRE ATT&CK techniques, each validated against a live simulated attack.
-3. **Visualise** — a dark-themed SOC analyst dashboard surfacing alerts, trends, and technique coverage.
-4. **Respond** — incident-response playbooks aligned to NIST SP 800-61 *(in progress)*.
-5. **Measure** — adversary emulation and mean-time-to-detect (MTTD) measurement *(in progress)*.
+Full details are in [evaluation/](evaluation/README.md) and [cloud/](cloud/README.md).
 
 ---
 
 ## Architecture
 
 | Component | Platform | Role |
-|-----------|----------|------|
-| Splunk Enterprise (x86-64 Docker) | Ubuntu 24.04 ARM VM + Rosetta | SIEM core — indexing, search, alerting |
+|---|---|---|
+| Splunk Enterprise (x86-64 Docker) | Ubuntu 24.04 ARM VM + Rosetta | SIEM core: indexing, search, alerting, dashboard |
 | Windows 11 (ARM) endpoint | Parallels VM | Monitored workstation |
-| Sysmon (ARM64) | On the endpoint | Process / network / registry telemetry |
-| Custom PowerShell HEC shipper | On the endpoint | Log forwarding (replaces the unsupported Universal Forwarder) |
-| Microsoft Defender | On the endpoint | Endpoint protection (defence-in-depth layer) |
+| Sysmon (ARM64) and advanced audit policy | On the endpoint | Process, registry and credential-access telemetry |
+| Microsoft Defender | On the endpoint | Prevention layer; detections forwarded to Splunk |
+| Custom PowerShell HEC shipper | On the endpoint | Log forwarding every 60 seconds (replaces the unsupported Universal Forwarder) |
+| Suricata (ARM64) + ET Open ruleset | Ubuntu VM | Network IDS; alerts shipped to Splunk every 2 minutes |
+| Windows Server 2022 honeypot | Microsoft Azure | Internet-exposed RDP (TCP 3389) only |
+| Log Analytics + Microsoft Sentinel | Microsoft Azure | Cloud-native SIEM, KQL analytics, attack map |
 
-### The Apple Silicon engineering angle
+### The Apple Silicon engineering challenge
 
-The reference materials assume x86 hardware and VirtualBox. Delivering this on an M-series MacBook required re-architecting the stack:
+The reference materials assume x86 hardware and VirtualBox. Delivering the project on an M-series MacBook meant re-architecting the stack:
 
-- **Splunk has no ARM build** → deployed as an x86-64 Docker container under Rosetta emulation, made reboot-resilient via a `systemd` service that re-registers the translation handler at boot.
-- **The Universal Forwarder is unsupported on Windows ARM** → replaced with a custom PowerShell script shipping events to the Splunk HTTP Event Collector (HEC).
-- A multi-layered ingestion fault (timezone offset, collector event-cap, source-side filtering, index routing) was diagnosed and resolved — documented as methodology in `/docs`.
-
----
-
-## Detection Rules (MITRE ATT&CK)
-
-Fourteen detection rules span the intrusion lifecycle — execution, persistence, privilege escalation, defence evasion, credential access, discovery, and lateral movement.
-
-| # | Detection Rule | MITRE ID | Severity |
-|---|----------------|----------|----------|
-| 1 | Suspicious PowerShell Execution | T1059.001 | High |
-| 2 | Brute-Force Authentication | T1110 | High |
-| 3 | New Windows Service Creation | T1543.003 | Medium |
-| 4 | Registry Run-Key Persistence | T1547.001 | High |
-| 5 | Windows Event Log Cleared | T1070.001 | Critical |
-| 6 | Account Creation / Privilege Escalation | T1136.001 / T1098 | High |
-| 7 | Explicit-Credential Logon (Lateral Movement) | T1078 | Medium |
-| 8 | Security Tooling Disabled | T1562.001 | High |
-| 9 | LSASS Credential Dumping | T1003.001 | Critical |
-| 10 | Scheduled Task Creation | T1053.005 | Medium |
-| 11 | Certutil LOLBin Download | T1105 | High |
-| 12 | Defender Malware Detection (defence-in-depth) | — | Critical |
-| 13 | System & Account Discovery | T1082 / T1087 | Medium |
-| 14 | Encoded / Obfuscated PowerShell | T1027 / T1059.001 | High |
-
-Each rule was baselined against normal activity, tested against a simulated attack, and tuned to reduce false positives (e.g. Rule 1 was tuned from 714 to 29 matches by excluding benign activity).
+- **Splunk has no ARM build.** It runs as an x86-64 Docker container under Rosetta emulation, with a `systemd` service that re-registers the translation handler at boot so the SIEM survives restarts.
+- **The Universal Forwarder is not supported on Windows ARM.** A custom PowerShell script ships events to the Splunk HTTP Event Collector (HEC) instead.
+- **A layered ingestion fault was diagnosed and fixed:** timezone offset, event cap and bookmark race, Sysmon filtering, and index routing. See [configs/SETUP.md](configs/SETUP.md).
 
 ---
 
-## Repository Structure
+## Detection rules (MITRE ATT&CK)
+
+| # | Rule | ATT&CK | Data source | Severity |
+|---|---|---|---|---|
+| 1 | Suspicious PowerShell execution | T1059.001 | 4688 | High |
+| 2 | Brute-force authentication | T1110 | 4625 | High |
+| 3 | New Windows service | T1543.003 | 7045 | Medium |
+| 4 | Registry Run-key persistence | T1547.001 | Sysmon 13 | High |
+| 5 | Security event log cleared | T1070.001 | 1102 | Critical |
+| 6 | Account creation / admin group change | T1136.001, T1098 | 4720, 4732 | High |
+| 7 | Explicit-credential logon | T1078 | 4648 | Medium |
+| 8 | Security tooling disabled | T1562.001 | 4688 | High |
+| 9 | LSASS credential dumping | T1003.001 | Sysmon 10 | Critical |
+| 10 | Scheduled task creation | T1053.005 | 4698, 4688 | Medium |
+| 11 | Certutil download (LOLBin) | T1105 | 4688 | High |
+| 12 | Defender malware detection | Defence in depth | 1116, 1117 | Critical |
+| 13 | System and account discovery | T1082, T1087, T1016 | 4688 | Medium |
+| 14 | Encoded PowerShell | T1027, T1059.001 | 4688 | High |
+| 15 | Suricata network intrusion | Various | Suricata | High |
+| 16 | Suricata known CVE / exploit | T1190 | Suricata | Critical |
+
+The full SPL for every rule is in [detection-rules/](detection-rules/README.md), and the coverage map is in [attack-navigator/](attack-navigator/README.md).
+
+---
+
+## Repository structure
 
 ```
 .
-├── detection-rules/   # The 14 SPL detection searches
-├── scripts/           # HEC shipper, Rosetta registration, Sysmon config
-├── dashboards/        # SOC analyst dashboard (Simple XML)
-├── playbooks/         # NIST SP 800-61 incident-response playbooks
-├── docs/              # Build logs, implementation report, lab journal
-├── evidence/          # Screenshots
-└── configs/           # Environment configuration
+├── detection-rules/    16 SPL detection searches
+├── dashboards/         SOC analyst dashboard (Splunk Simple XML)
+├── scripts/            Windows HEC shipper and Suricata alert shipper
+├── configs/            Environment setup notes and lessons learned
+├── playbooks/          Five NIST SP 800-61r3 incident-response playbooks
+├── evaluation/         Atomic Red Team results and detection metrics
+├── cloud/              Azure honeypot, Sentinel rule and KQL queries
+├── attack-navigator/   MITRE ATT&CK Navigator coverage layer
+├── evidence/           Screenshots supporting the report
+└── docs/               Project timeline
 ```
 
 ---
 
-## Frameworks & Standards
+## Frameworks and standards
 
-- **MITRE ATT&CK** — technique mapping for all detections
-- **NIST SP 800-61** — incident-response playbook structure
-- **Atomic Red Team** — adversary emulation for validation *(in progress)*
-- **Gibbs' Reflective Cycle (1988)** — reflective practice
+- **MITRE ATT&CK:** technique mapping and coverage analysis for every detection
+- **NIST SP 800-61r3 / NIST CSF 2.0:** incident-response playbook structure
+- **Atomic Red Team:** repeatable adversary emulation for validation
+- **Design science research:** build, evaluate and refine the artefact
 
 ---
 
 ## Status
 
 - [x] SIEM deployed and reboot-resilient on Apple Silicon
-- [x] Endpoint instrumented (Sysmon, audit policy)
+- [x] Endpoint instrumented (Sysmon, audit policy, Defender forwarding)
 - [x] Automated, time-accurate log ingestion
-- [x] 14 MITRE ATT&CK detection rules (built, tuned, alerting)
+- [x] 16 ATT&CK-mapped detection rules (14 endpoint, 2 network), tuned and alerting
+- [x] Suricata network IDS
 - [x] SOC analyst dashboard
-- [ ] Network IDS source (Suricata)
-- [ ] NIST SP 800-61 playbooks
-- [ ] Adversary emulation & MTTD measurement
-- [ ] ATT&CK Navigator coverage heat map
+- [x] Atomic Red Team validation and MTTD measurement
+- [x] ATT&CK Navigator coverage layer
+- [x] Azure honeypot with Microsoft Sentinel analytics rule and attack map
+- [x] Five NIST SP 800-61r3 incident-response playbooks
+- [ ] Atomic tests for the remaining rules (brute force, log clearing, account creation first)
+- [ ] Pull honeypot detections into Splunk for a single analyst view
+- [ ] Rebuild the SIEM on dedicated x86 hardware (Proxmox)
+- [ ] Live demonstration, 11 November 2026
 
 ---
 
-## Security Note
+## Security and ethics
 
-All credentials, tokens, and secrets have been removed from the files in this repository and replaced with placeholders. Configure your own values before use.
+- All credentials and tokens have been removed from the scripts and replaced with placeholders. Set your own values before use.
+- Attack techniques were only run on systems owned by the author, inside an isolated lab.
+- The honeypot is passive: it records attempts but never interacts with, traces or retaliates against their sources.
+- Attacker IP addresses are reported only in aggregate and are not published here.
 
 ---
 

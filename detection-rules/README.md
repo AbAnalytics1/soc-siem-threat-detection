@@ -2,8 +2,9 @@
 
 16 detection rules mapped to the MITRE ATT&CK framework, spanning two log sources
 (Windows endpoint telemetry and Suricata network IDS). Each was baselined against
-normal activity, validated against a simulated attack, tuned to reduce false
-positives, and saved as a scheduled Splunk alert.
+normal activity, tuned to reduce false positives and saved as a scheduled Splunk
+alert. Which rules have been validated with Atomic Red Team tests is recorded in
+[evaluation/](../evaluation/README.md).
 
 **Data model note:** process-creation telemetry is reliably available as Windows
 Event 4688 in `windows_security`. Because events are ingested as JSON via HEC,
@@ -21,7 +22,7 @@ index=windows_security EventCode=4688 powershell ("-enc " OR "-EncodedCommand" O
 ```
 
 ### Rule 2 — Brute-Force Authentication — T1110 — High
-Detects 5+ failed logons (Event 4625) from an account within a 10-minute window.
+Detects more than 5 failed logons (Event 4625) for one account on one host within a 10-minute window.
 ```spl
 index=windows_security EventCode=4625 | bin _time span=10m | stats count as failed_attempts by _time, TargetUserName, Computer | where failed_attempts > 5 | sort -failed_attempts
 ```
@@ -50,7 +51,7 @@ Detects new account creation (4720) and additions to privileged groups (4732).
 index=windows_security (EventCode=4720 OR EventCode=4732) | table _time, Computer, EventCode, TargetUserName, SubjectUserName, MemberName | sort -_time
 ```
 
-### Rule 7 — Explicit-Credential Logon (Lateral Movement) — T1078 — Medium
+### Rule 7 — Explicit-Credential Logon — T1078 — Medium
 Detects explicit-credential logons (Event 4648), excluding system processes and
 machine accounts. Tuned from 37 to 25 matches.
 ```spl

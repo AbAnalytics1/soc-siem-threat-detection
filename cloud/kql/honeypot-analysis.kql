@@ -1,0 +1,21 @@
+// Queries used for the honeypot analysis (Appendix C of the Client Impact Report).
+// Results are reported in aggregate only; individual attacker IP addresses are not published.
+
+// Failed logons on the honeypot
+SecurityEvent
+| where EventID == 4625
+| summarize Attempts = count(), UniqueIPs = dcount(IpAddress)
+
+// Top attacking IPs with geolocation
+SecurityEvent
+| where EventID == 4625
+| summarize Attempts = count() by IpAddress
+| extend Geo = geo_info_from_ip_address(IpAddress)
+| extend Country = tostring(Geo.country)
+| top 10 by Attempts
+
+// Most-tried usernames
+SecurityEvent
+| where EventID == 4625
+| summarize Attempts = count() by TargetUserName
+| top 10 by Attempts

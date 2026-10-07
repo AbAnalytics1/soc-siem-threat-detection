@@ -1,0 +1,15 @@
+// Microsoft Sentinel scheduled analytics rule: "RDP Brute Force from Single IP (T1110)"
+// Severity: High | MITRE ATT&CK: Credential Access (T1110 Brute Force)
+// Schedule: runs every 5 hours over the previous 5 hours of data
+// Alert threshold: query returns more than 0 results; one alert per result row
+// Entity mapping: IP (Address = IpAddress), Host (HostName = Computer)
+SecurityEvent
+| where EventID == 4625
+| where isnotempty(IpAddress) and IpAddress != "-"
+| summarize FailedAttempts = count(),
+            UsernamesTried = make_set(TargetUserName, 10),
+            FirstSeen = min(TimeGenerated),
+            LastSeen = max(TimeGenerated)
+            by IpAddress, Computer
+| where FailedAttempts >= 10
+| extend Country = tostring(geo_info_from_ip_address(IpAddress).country)

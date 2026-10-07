@@ -1,0 +1,10 @@
+// Total failed (4625) and successful (4624) logons on the honeypot from remote
+// source addresses, from the time the honeypot went live (28 Sep 2026, 15:00 UTC).
+// Result: 55,313 failed logons from 121 unique IP addresses; no 4624 row returned.
+SecurityEvent
+| where TimeGenerated > datetime(2026-09-28 15:00)
+| where EventID in (4624, 4625)
+| where isnotempty(IpAddress) and IpAddress !in ("-", "127.0.0.1", "::1")
+| summarize Attempts = count(), UniqueIPs = dcount(IpAddress),
+            FirstSeen = min(TimeGenerated), LastSeen = max(TimeGenerated)
+            by EventID

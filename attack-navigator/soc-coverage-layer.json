@@ -1,0 +1,233 @@
+{
+  "name": "Hybrid SOC detection coverage",
+  "versions": {
+    "attack": "17",
+    "navigator": "5.1.0",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Detection coverage of the 16 SOC rules (18 techniques and sub-techniques). Green = rule validated with Atomic Red Team; blue = covered by a rule but not yet validated.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "aggregateFunction": "max",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": true,
+    "countUnscored": false,
+    "expandedSubtechniques": "annotated"
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1059.001",
+      "score": 2,
+      "color": "#2ecc71",
+      "comment": "Rules 1 and 14. Validated: Atomic T1059.001-17 detected (Event 4688).",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1027",
+      "score": 2,
+      "color": "#2ecc71",
+      "comment": "Rule 14 (encoded PowerShell). Validated: Atomic T1059.001-17 detected.",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1547.001",
+      "score": 2,
+      "color": "#2ecc71",
+      "comment": "Rule 4 (Sysmon Event 13). Validated: Atomic T1547.001-1 detected.",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1112",
+      "score": 2,
+      "color": "#2ecc71",
+      "comment": "Rule 4 family (Sysmon Event 13). Validated: Atomic T1112-1 detected.",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1053.005",
+      "score": 2,
+      "color": "#2ecc71",
+      "comment": "Rule 10. Validated: Atomic T1053.005-1 detected (Event 4688).",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1082",
+      "score": 2,
+      "color": "#2ecc71",
+      "comment": "Rule 13. Validated: Atomic T1082-1 detected (Event 4688).",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1016",
+      "score": 2,
+      "color": "#2ecc71",
+      "comment": "Rule 13. Validated: Atomic T1016-1 detected (Event 4688).",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1110",
+      "score": 1,
+      "color": "#3498db",
+      "comment": "Rule 2 (Event 4625) and the Sentinel rule RDP Brute Force from Single IP. Exercised by real attacks on the cloud honeypot; on-premises rule not yet Atomic-tested.",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1543.003",
+      "score": 1,
+      "color": "#3498db",
+      "comment": "Rule 3 (Event 7045). Not yet validated.",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1070.001",
+      "score": 1,
+      "color": "#3498db",
+      "comment": "Rule 5 (Event 1102). Not yet validated.",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1136.001",
+      "score": 1,
+      "color": "#3498db",
+      "comment": "Rule 6 (Event 4720). Not yet validated.",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1098",
+      "score": 1,
+      "color": "#3498db",
+      "comment": "Rule 6 (Event 4732). Not yet validated.",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1078",
+      "score": 1,
+      "color": "#3498db",
+      "comment": "Rule 7 (Event 4648). Not yet validated.",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1562.001",
+      "score": 1,
+      "color": "#3498db",
+      "comment": "Rule 8 (Event 4688). Not yet validated.",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1003.001",
+      "score": 1,
+      "color": "#3498db",
+      "comment": "Rule 9 (Sysmon Event 10). Atomic T1003.001-2 was blocked by Defender and recorded via Rule 12; Rule 9 itself not yet validated.",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1105",
+      "score": 1,
+      "color": "#3498db",
+      "comment": "Rule 11 (certutil). Test blocked by Defender and recorded via Rule 12.",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1087",
+      "score": 1,
+      "color": "#3498db",
+      "comment": "Rule 13. Not yet validated for account discovery.",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1190",
+      "score": 1,
+      "color": "#3498db",
+      "comment": "Rule 16 (Suricata CVE/exploit signatures). Fired on lab traffic triaged as benign.",
+      "enabled": true,
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1059",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1547",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1053",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1543",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1070",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1136",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1562",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1003",
+      "enabled": true,
+      "showSubtechniques": true
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffffff",
+      "#3498db",
+      "#2ecc71"
+    ],
+    "minValue": 0,
+    "maxValue": 2
+  },
+  "legendItems": [
+    {
+      "label": "Rule validated with Atomic Red Team",
+      "color": "#2ecc71"
+    },
+    {
+      "label": "Covered by a rule, not yet validated",
+      "color": "#3498db"
+    }
+  ],
+  "metadata": [],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#205b8f",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false,
+  "selectVisibleTechniques": false
+}
