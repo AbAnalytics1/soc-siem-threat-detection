@@ -9,7 +9,7 @@ A working **hybrid Security Operations Centre (SOC)** designed for a fictional m
 
 Everything was built on **Apple Silicon (ARM64)**, which the standard tooling does not officially support.
 
-> MSc Cybersecurity capstone project, University of Chester (WB7103/WB7104), 2026. The scenario is a financial-services firm, where credential theft, privilege escalation and anti-forensic activity carry direct regulatory and financial consequences.
+>  The scenario is a financial-services firm, where credential theft, privilege escalation and anti-forensic activity carry direct regulatory and financial consequences.
 
 ![Architecture of the hybrid SOC](evidence/architecture.png)
 
